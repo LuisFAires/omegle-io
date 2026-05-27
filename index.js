@@ -29,52 +29,26 @@ async function main() {
     async function beforeChat() {
         try {
             console.log("⏳ Navigating to Omegle...");
-            await page.goto("https://omegleweb.io/");
-            console.log("👀 Looking for text chat button...");
-            let buttonFound = false;
-            do {
-                buttonFound = await page.evaluate(async() => {
-                    let button = document.querySelector("#textbtn");
-                    if (button) {
-                        await new Promise((resolve) => setTimeout(resolve, 500));
-                        button.click();
-                        await new Promise((resolve) => setTimeout(resolve, 200));
-                        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                        checkboxes[1].click();
-                        checkboxes[2].click();
-                        document.querySelector('input[type="button"]').click();
-                        return true;
-                    }
-                    return false;
-                });
-                await new Promise((resolve) => setTimeout(resolve, 50));
-            } while (!buttonFound)
-            console.log("🖱️✅✅🖱️ Clicked text chat button, checked agreement boxes and clicked on confirm button...");
-            await page.waitForNavigation();
-            buttonInnerText = false;
-            do {
-                buttonInnerText = await page.evaluate(() => {
-                    let button = document.querySelector("#agree-btn");
-                    if (button && document.querySelector("#country-preference-checkbox")) {
-                        return button.innerText;
-                    }
-                    return false;
-                });
-            }while (!buttonInnerText)
-            if (buttonInnerText.includes("Omezy")) {
-                await browser.close();
-                console.log("⛔ Unable to connect with current Session.");
-                main();
-                return;
-            }
-            console.log("🗺️ Country preference checkbox...");
-            await page.evaluate((sameCountry) => {
-                //true for same country, false for random
-                document.querySelector("#country-preference-checkbox").checked = sameCountry;
-            }, SAME_COUNTRY);
+            await page.goto("https://omegleweb.io/chat?interests=");
             await page.evaluate(() => {
-                document.querySelector("#agree-btn").click();
-            });
+                sessionStorage.setItem("omgw_ab_v1", "A");
+                sessionStorage.setItem("userAgreement", "true");
+            });;
+            await page.waitForNavigation({ waitUntil: "networkidle0" });
+            console.log("🗺️ Country preference checkbox...");
+            let elementsFound = false;
+            do {
+                elementsFound = await page.evaluate(async (sameCountry) => {
+                    if (!document.querySelector("#country-preference-checkbox") || !document.querySelector("#agree-btn")) {
+                        return false;
+                    }
+                    document.querySelector("#country-preference-checkbox").checked = sameCountry;
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+                    document.querySelector("#agree-btn").click();
+                    return true;
+                }, SAME_COUNTRY);
+                await new Promise((resolve) => setTimeout(resolve, 50));
+            } while (!elementsFound)
             console.log("🖱️ Clicked on agree button...");
         } catch (error) {
             console.log("❌ Error during setup:");
@@ -94,6 +68,7 @@ async function main() {
                 if (status && !disconnectNotice) {
                     return true;
                 }
+                //Country preference may not be saved, try clicking worldwide link if not already on it 
                 if (!sameCountry) {
                     try {
                         document.querySelector('a[class="worldwide-link"]').click();
@@ -118,7 +93,7 @@ async function main() {
         }
 
         try {
-            console.log('🕒',new Date().toLocaleTimeString());
+            console.log('🕒', new Date().toLocaleTimeString());
 
             let isOnlineNow = await new Promise((resolve) => {
                 let resolved = false;
