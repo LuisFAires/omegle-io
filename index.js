@@ -2,6 +2,7 @@ const { connect } = require("puppeteer-real-browser");
 const SAME_COUNTRY = false; //true for same country, false for random
 const MESSAGE_DELAY = 50; //delay in ms between each character typed
 const MESSAGE = 'Search for "triggertaps.top" on google'; //message to send to stranger
+const INTERESTS = "" //comma separated list of interests, leave blank for random
 
 async function main() {
     console.log("🌐 setting browser up...")
@@ -29,12 +30,11 @@ async function main() {
     async function beforeChat() {
         try {
             console.log("⏳ Navigating to Omegle...");
-            await page.goto("https://omegleweb.io/chat?interests=");
+            await page.goto("https://omegleweb.io/chat?interests=" + encodeURI(INTERESTS), { waitUntil: "networkidle0" });
             await page.evaluate(() => {
                 sessionStorage.setItem("omgw_ab_v1", "A");
                 sessionStorage.setItem("userAgreement", "true");
             });;
-            await page.waitForNavigation({ waitUntil: "networkidle0" });
             console.log("🗺️ Country preference checkbox...");
             let elementsFound = false;
             do {
@@ -51,7 +51,7 @@ async function main() {
             } while (!elementsFound)
             console.log("🖱️ Clicked on agree button...");
         } catch (error) {
-            console.log("❌ Error during setup:");
+            console.log("❌ Error during beforeChat:");
             console.log(error);
             try { browser.close(); } catch { }
             main();
@@ -80,7 +80,7 @@ async function main() {
 
         async function sendMessage(message) {
             for (character of message) {
-                page.type('input[id="message-input"]', character)
+                await page.type('input[id="message-input"]', character)
                 await new Promise((resolve) => setTimeout(resolve, MESSAGE_DELAY));
                 let online = await isStrangerOnline();
                 if (!online) {
@@ -90,6 +90,8 @@ async function main() {
             }
             await page.click('button[id="send-btn"]');
             console.log("✅ Sent messages to stranger ✅ ");
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            return true;
         }
 
         try {
@@ -121,8 +123,7 @@ async function main() {
                 return;
             }
             console.log("🟢 Stranger is online...");
-            await sendMessage(MESSAGE);
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+            let sendMessageResult = await sendMessage(MESSAGE);
             isOnlineNow = await isStrangerOnline();
             if (isOnlineNow) {
                 console.log("🟢 Stranger is still online, ending chat...");
