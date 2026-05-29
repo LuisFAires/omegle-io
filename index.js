@@ -24,6 +24,28 @@ async function main() {
         //     password:'<proxy-password>'
         // }
     });
+
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+        const resourceType = request.resourceType();
+        const url = request.url();
+
+        if (url.includes('google') || 
+            url.includes('.png') || 
+            url.includes('.css') || 
+            url.includes('.ico') ||
+            url.includes('mootools') || 
+            url.includes('beacon') ||
+            url.includes('speculation') ||
+            url.includes('omegle.js') ||
+            url.includes('loadder.js') ||
+            url.includes('main.js')
+        ) {
+            request.abort(); 
+        } else {
+            request.continue(); 
+        }
+    })
     console.log("🌐 Browser set up.");
     await beforeChat();
 
