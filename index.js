@@ -90,7 +90,7 @@ async function main() {
             }
             await page.click('button[id="send-btn"]');
             console.log("✅ Sent messages to stranger ✅ ");
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 200));
             return true;
         }
 
