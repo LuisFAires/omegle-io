@@ -2,6 +2,20 @@ const { connect } = require("puppeteer-real-browser");
 const SAME_COUNTRY = false; //true for same country, false for random
 const MESSAGE = 'Search for "triggertaps.top" on google'; //message to send to stranger
 const INTERESTS = "" //comma separated list of interests, leave blank for random
+const PROXIES = [
+    //Example proxy format
+    /*{
+        host: '<proxy-host>',
+        port: '<proxy-port>',
+        username: '<proxy-username>',
+        password: '<proxy-password>'
+    },{
+        host: '<proxy-host>',
+        port: '<proxy-port>',
+        username: '<proxy-username>',
+        password: '<proxy-password>'
+    }*/
+]
 
 async function main() {
     console.log("🌐 setting browser up...")
@@ -16,12 +30,7 @@ async function main() {
         connectOption: {},
         disableXvfb: false,
         ignoreAllFlags: false,
-        // proxy:{
-        //     host:'<proxy-host>',
-        //     port:'<proxy-port>',
-        //     username:'<proxy-username>',
-        //     password:'<proxy-password>'
-        // }
+        proxy: PROXIES[Math.floor(Math.random() * PROXIES.length)] || undefined
     });
 
     await page.setRequestInterception(true);
@@ -29,20 +38,20 @@ async function main() {
         const resourceType = request.resourceType();
         const url = request.url();
 
-        if (url.includes('google') || 
-            url.includes('.png') || 
-            url.includes('.css') || 
+        if (url.includes('google') ||
+            url.includes('.png') ||
+            url.includes('.css') ||
             url.includes('.ico') ||
-            url.includes('mootools') || 
+            url.includes('mootools') ||
             url.includes('beacon') ||
             url.includes('speculation') ||
             url.includes('omegle.js') ||
             url.includes('loadder.js') ||
             url.includes('main.js')
         ) {
-            request.abort(); 
+            request.abort();
         } else {
-            request.continue(); 
+            request.continue();
         }
     })
     console.log("🌐 Browser set up.");
